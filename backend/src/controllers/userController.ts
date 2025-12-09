@@ -63,3 +63,52 @@ export const getUsers = async (req: Request, res: Response) => {
     res.status(500).json({ error: "DB error" });
   }
 };
+
+export const updateUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { email, password } = req.body;
+
+  if (!email && !password)
+    return res.status(400).json({ error: "Nothing to update" });
+
+  try {
+    const data: any = {};
+
+    if (email) data.email = email;
+    if (password) data.password = await bcrypt.hash(password, 10);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: Number(id) },
+      data,
+      select: { id: true, email: true },
+    });
+
+    logEvent(`Usuario actualizado: ${updatedUser.email}`);
+
+    res.json(updatedUser);
+  } catch (err: any) {
+    console.error(err);
+    logEvent(`Error al actualizar usuario ${id}: ${err.message}`);
+    res.status(500).json({ error: "DB error" });
+  }
+};
+
+
+export const deleteUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const deleted = await prisma.user.delete({
+      where: { id: Number(id) },
+      select: { id: true, email: true },
+    });
+
+    logEvent(`Usuario eliminado: ${deleted.email}`);
+
+    res.json({ message: "User deleted", user: deleted });
+  } catch (err: any) {
+    console.error(err);
+    logEvent(`Error al eliminar usuario ${id}: ${err.message}`);
+    res.status(500).json({ error: "DB error" });
+  }
+};
