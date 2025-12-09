@@ -1,0 +1,53 @@
+version: "3.9"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+
+services:
+  database:
+    build: ./database
+    container_name: myapp-database
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"       # Solo exponer si necesitas acceso externo
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    container_name: myapp-backend
+    env_file:
+      - .env
+    depends_on:
+      - database
+    ports:
+      - "${PORT}:${PORT}"
+    restart: always
+    networks:
+      - app-network
+    # Prisma migraciones automáticas al iniciar
+    command: sh -c "npx prisma migrate deploy && npm start"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_REACT_APP_API_URL: ${VITE_REACT_APP_API_URL}
+    container_name: myapp-frontend
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: always
+    networks:
+      - app-network
