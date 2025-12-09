@@ -1,4 +1,4 @@
-# Proyecto - Primer Parcial - DevOps Frontend
+# Proyecto - Segundo Parcial - DevOps Frontend
 
 ### Integrantes
 - Jhonatan Cabezas - 70416 
