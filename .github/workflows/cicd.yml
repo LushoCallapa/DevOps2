@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Obtener repo
+      # 1️⃣ Obtener el repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Copiar TODO el proyecto a la EC2
+      # 2️⃣ Copiar todo el proyecto a la EC2
       - name: Copy entire project to EC2
         uses: appleboy/scp-action@v1
         with:
@@ -23,30 +23,53 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "./"
           target: "/home/${{ secrets.EC2_USER }}/app"
-          rm: true   # Limpia antes de copiar
+          rm: true
 
-      # 3. Ejecutar comandos en la EC2 para ejecutar docker compose
+      # 3️⃣ Crear .env en la raíz y desplegar con Docker Compose
       - name: Deploy on EC2 with Docker Compose
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            cd /home/${{ secrets.EC2_USER }}/app
+            host: ${{ secrets.EC2_HOST }}
+            username: ${{ secrets.EC2_USER }}
+            key: ${{ secrets.EC2_KEY }}
+            script: |
+                cd /home/${{ secrets.EC2_USER }}/app
 
-            # Asegurar que Docker y Compose existen (solo 1 vez)
-            if ! command -v docker &> /dev/null
-            then
-              echo "Instalando Docker..."
-              sudo apt update -y
-              sudo apt install -y docker.io docker-compose
-              sudo systemctl enable docker
-              sudo systemctl start docker
-            fi
+                cat > .env << 'EOF'
+                POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                POSTGRES_DB=${{ secrets.POSTGRES_DB }}
 
-            echo "Iniciando contenedores..."
-            sudo docker compose down
-            sudo docker compose up -d --build
+                PORT=${{ secrets.PORT }}
+                JWT_SECRET=${{ secrets.JWT_SECRET }}
+                DATABASE_URL=${{ secrets.DATABASE_URL }}
 
-            echo "Despliegue completado correctamente"
+                VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
+                EOF
+
+                cat > backend/.env << 'EOF'
+      
+                PORT=${{ secrets.PORT }}
+                JWT_SECRET=${{ secrets.JWT_SECRET }}
+                DATABASE_URL=${{ secrets.DATABASE_URL }}
+                EOF
+
+                cat > frontend/.env << 'EOF'
+                VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
+                EOF
+
+                if ! command -v docker &> /dev/null
+                then
+                    echo "Instalando Docker..."
+                    sudo apt update -y
+                    sudo apt install -y docker.io docker-compose
+                    sudo systemctl enable docker
+                    sudo systemctl start docker
+                fi
+
+                echo "Iniciando contenedores..."
+                sudo docker-compose down
+                sudo docker-compose up -d --build
+
+                echo "Despliegue completado correctamente"
+
