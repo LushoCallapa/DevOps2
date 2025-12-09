@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getUsers, createUser, updateUser, deleteUser, type User } from "../services/userService";
 
 export default function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,9 +90,23 @@ export default function UsersPage() {
     }
   };
 
+  // Cerrar sesión
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
   return (
     <div className="p-6 min-h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Usuarios</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Usuarios</h1>
+        <button
+          onClick={handleLogout}
+          className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition"
+        >
+          Cerrar Sesión
+        </button>
+      </div>
 
       {/* Formulario para crear usuario */}
       <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
