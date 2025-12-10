@@ -28,7 +28,7 @@ export default function Login() {
       <div className="backdrop-blur-xl bg-white/20 shadow-2xl border border-white/30 rounded-3xl p-10 w-full max-w-md animate-fade-in">
 
         <h1 className="text-4xl font-extrabold text-center text-white drop-shadow mb-8">
-          Bienvenido
+          Bienvenido Upbinos
         </h1>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
