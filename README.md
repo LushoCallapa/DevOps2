@@ -22,6 +22,10 @@ Sistema web full-stack para gestión de usuarios desarrollado con arquitectura d
 
 ## Inicio rapido
 
+### Clone del repositorio
+```bash
+git clone https://github.com/LushoCallapa/DevOps2.git
+```
 ### Configuración
 El archivo `.env.example` ya está configurado en la raíz del proyecto, es necesario modificarlo a valores reales para poder probar de manera local si se quisiera.
 
