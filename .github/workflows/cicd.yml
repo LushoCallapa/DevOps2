@@ -10,12 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Obtener el repositorio
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Copiar todo el proyecto a la EC2
-      - name: Copy entire project to EC2
+      # 2. Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3. Build and push backend
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/myapp-backend:latest
+
+      # 4. Build and push frontend
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/myapp-frontend:latest
+
+      # 5. Build and push database (si tienes Dockerfile)
+      - name: Build & Push Database
+        uses: docker/build-push-action@v5
+        with:
+          context: ./database
+          file: ./database/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/myapp-database:latest
+
+      # 6. Copiar todo el proyecto a EC2
+      - name: Copy project to EC2
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -25,51 +62,54 @@ jobs:
           target: "/home/${{ secrets.EC2_USER }}/app"
           rm: true
 
-      # Crear .env en la raíz y desplegar con Docker Compose
+      # 7. Deploy en EC2 con Docker Compose
       - name: Deploy on EC2 with Docker Compose
         uses: appleboy/ssh-action@v1
         with:
-            host: ${{ secrets.EC2_HOST }}
-            username: ${{ secrets.EC2_USER }}
-            key: ${{ secrets.EC2_KEY }}
-            script: |
-                cd /home/${{ secrets.EC2_USER }}/app
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/app
 
-                cat > .env << 'EOF'
-                POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-                POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-                POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            cat > .env << 'EOF'
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
 
-                PORT=${{ secrets.PORT }}
-                JWT_SECRET=${{ secrets.JWT_SECRET }}
-                DATABASE_URL=${{ secrets.DATABASE_URL }}
+            PORT=${{ secrets.PORT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
 
-                VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
-                EOF
+            VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
+            EOF
 
-                cat > backend/.env << 'EOF'
-      
-                PORT=${{ secrets.PORT }}
-                JWT_SECRET=${{ secrets.JWT_SECRET }}
-                DATABASE_URL=${{ secrets.DATABASE_URL }}
-                EOF
+            cat > backend/.env << 'EOF'
+            PORT=${{ secrets.PORT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            EOF
 
-                cat > frontend/.env << 'EOF'
-                VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
-                EOF
+            cat > frontend/.env << 'EOF'
+            VITE_REACT_APP_API_URL=${{ secrets.VITE_REACT_APP_API_URL }}
+            EOF
 
-                if ! command -v docker &> /dev/null
-                then
-                    echo "Instalando Docker..."
-                    sudo apt update -y
-                    sudo apt install -y docker.io docker-compose
-                    sudo systemctl enable docker
-                    sudo systemctl start docker
-                fi
+            if ! command -v docker &> /dev/null
+            then
+                echo "Instalando Docker..."
+                sudo apt update -y
+                sudo apt install -y docker.io docker-compose
+                sudo systemctl enable docker
+                sudo systemctl start docker
+            fi
 
-                echo "Iniciando contenedores..."
-                sudo docker-compose down
-                sudo docker-compose up -d --build
+            echo "Actualizando imágenes desde Docker Hub..."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/myapp-backend:latest
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/myapp-frontend:latest
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/myapp-database:latest
 
-                echo "Despliegue completado correctamente"
+            echo "Iniciando contenedores..."
+            sudo docker-compose down
+            sudo docker-compose up -d --build
 
+            echo "Despliegue completado correctamente"
