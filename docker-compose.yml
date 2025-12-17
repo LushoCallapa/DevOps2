@@ -5,9 +5,12 @@ networks:
     driver: bridge
 
 volumes:
+  grafana-data:
+  loki-data:
   dbdata:
 
 services:
+  # Base de datos
   database:
     build: ./database
     container_name: myapp-database
@@ -21,6 +24,7 @@ services:
     networks:
       - app-network
 
+  # Backend
   backend:
     build: ./backend
     container_name: myapp-backend
@@ -35,6 +39,7 @@ services:
       - app-network
     command: sh -c "npx prisma migrate deploy && npm start"
 
+  # Frontend
   frontend:
     build:
       context: ./frontend
@@ -48,5 +53,79 @@ services:
     ports:
       - "80:80"
     restart: always
+    networks:
+      - app-network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    labels:
+      logging: "promtail"
+      service: "prometheus"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert.yml:/etc/prometheus/alert.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    labels:
+      logging: "promtail"
+      service: "grafana"
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - loki
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - app-network
+
+  # Node Exporter
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    labels:
+      logging: "promtail"
+      service: "node-exporter"
+    ports:
+      - "9100:9100"
+    networks:
+      - app-network
+
+  # Loki
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    user: "0:0"
+    networks:
+      - app-network
+
+  # Promtail
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
     networks:
       - app-network
