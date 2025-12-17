@@ -31,5 +31,5 @@ variable "instance_type" {
 variable "ssh_key_name" {
   description = "Existing AWS key pair name to associate with EC2"
   type        = string
-  default     = ""
+  default     = "segundoParcial"
 }
