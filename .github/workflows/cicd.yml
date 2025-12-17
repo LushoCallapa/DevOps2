@@ -113,3 +113,17 @@ jobs:
             sudo docker-compose up -d --build
 
             echo "Despliegue completado correctamente"
+
+      - name: Notify Discord (Success)
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{
+            "username": "GitHub Actions",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "content": "✅ **Deploy exitoso en EC2**\n\nRepositorio: **${{ github.repository }}**\nBranch: **${{ github.ref_name }}**\nCommit: **${{ github.sha }}**\nAutor: **${{ github.actor }}** 🚀"
+          }' \
+          $DISCORD_WEBHOOK
