@@ -111,6 +111,13 @@ resource "aws_instance" "web_server" {
   associate_public_ip_address = true
   key_name                    = var.ssh_key_name != "" ? var.ssh_key_name : null
 
+  root_block_device {
+    volume_size           = 20      # tamaño en GB
+    volume_type           = "gp3"   # SSD gp3
+    delete_on_termination = true
+  }
+
+
   tags = {
     Name = "devops-tercer-parcial-ec2"
   }
