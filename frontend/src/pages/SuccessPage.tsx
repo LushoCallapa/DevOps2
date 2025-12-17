@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUsers, createUser, updateUser, deleteUser, type User } from "../services/userService";
+import { getUsers, deleteUser, type User } from "../services/userService";
+import CreateUserModal from "../components/CreateUserModal";
+import EditUserModal from "../components/EditUserModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function UsersPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [editEmail, setEditEmail] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+
+  // Modales
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Cargar usuarios al inicio
   const fetchUsers = async () => {
@@ -26,67 +30,42 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  // Crear un nuevo usuario
-  const handleCreateUser = async () => {
-    if (!email || !password) return alert("Email y password son requeridos");
-    setLoading(true);
-    try {
-      const newUser = await createUser({ email, password });
-      setUsers((prev) => [...prev, newUser]);
-      setEmail("");
-      setPassword("");
-    } catch (err) {
-      console.error(err);
-      alert("Error creando el usuario");
-    } finally {
-      setLoading(false);
-    }
+  // Crear usuario
+  const handleUserCreated = (newUser: User) => {
+    setUsers((prev: User[]) => [...prev, newUser]);
   };
 
-  // Preparar edición de usuario
+  // Editar usuario
   const handleEditClick = (user: User) => {
-    setEditingUserId(user.id || null);
-    setEditEmail(user.email);
-    setEditPassword("");
+    setSelectedUser(user);
+    setEditModalOpen(true);
   };
 
-  // Guardar cambios de usuario
-  const handleSaveEdit = async () => {
-    if (editingUserId === null) return;
-    try {
-      const updatedUser = await updateUser(editingUserId, {
-        email: editEmail,
-        password: editPassword || undefined,
-      });
-      setUsers((prev) =>
-        prev.map((u) => (u.id === editingUserId ? updatedUser : u))
-      );
-      setEditingUserId(null);
-      setEditEmail("");
-      setEditPassword("");
-    } catch (err) {
-      console.error(err);
-      alert("Error actualizando usuario");
-    }
-  };
-
-  // Cancelar edición
-  const handleCancelEdit = () => {
-    setEditingUserId(null);
-    setEditEmail("");
-    setEditPassword("");
+  const handleUserUpdated = (updatedUser: User) => {
+    setUsers((prev: User[]) =>
+      prev.map((u: User) => (u.id === updatedUser.id ? updatedUser : u))
+    );
+    setEditModalOpen(false);
   };
 
   // Eliminar usuario
-  const handleDelete = async (id?: number) => {
-    if (!id) return;
-    if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
+  const handleDeleteClick = (user: User) => {
+    setSelectedUser(user);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedUser?.id) return;
+
+    setDeleteLoading(true);
     try {
-      await deleteUser(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      await deleteUser(selectedUser.id);
+      setUsers((prev: User[]) => prev.filter((u: User) => u.id !== selectedUser.id));
+      setDeleteModalOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Error eliminando usuario");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -97,120 +76,116 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gray-100">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Usuarios</h1>
-        <button
-          onClick={handleLogout}
-          className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition"
-        >
-          Cerrar Sesión
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <div className="bg-white shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
+            <p className="text-gray-500 text-sm mt-1">Administra y controla los usuarios del sistema</p>
+          </div>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105 flex items-center gap-2"
+            >
+              <span className="text-xl"></span> Nuevo Usuario
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Formulario para crear usuario */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="px-4 py-2 border rounded-md w-full md:w-64"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="px-4 py-2 border rounded-md w-full md:w-64"
-        />
-        <button
-          onClick={handleCreateUser}
-          disabled={loading}
-          className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition"
-        >
-          {loading ? "Creando..." : "Crear Usuario"}
-        </button>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {users.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+            <div className="text-6xl mb-4">📭</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">No hay usuarios</h2>
+            <p className="text-gray-600 mb-6">Comienza creando el primer usuario del sistema</p>
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition"
+            >
+              Crear Primer Usuario
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    <th className="px-6 py-4 text-left font-semibold">ID</th>
+                    <th className="px-6 py-4 text-left font-semibold">Email</th>
+                    <th className="px-6 py-4 text-center font-semibold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user: User) => (
+                    <tr
+                      key={user.id}
+                      className="border-b border-gray-200 hover:bg-blue-50 transition"
+                    >
+                      <td className="px-6 py-4 font-semibold text-gray-800">{user.id}</td>
+                      <td className="px-6 py-4 text-gray-700">{user.email}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3 justify-center">
+                          <button
+                            onClick={() => handleEditClick(user)}
+                            className="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-600 rounded-lg transition transform hover:scale-110"
+                            title="Editar usuario"
+                          >
+                            <span className="text-xl">✏️</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteClick(user)}
+                            className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition transform hover:scale-110"
+                            title="Eliminar usuario"
+                          >
+                            <span className="text-xl">🗑️</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <p className="text-gray-600 text-sm">
+                Total: <span className="font-semibold text-gray-800">{users.length}</span> usuario(s)
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tabla de usuarios */}
-      <div className="overflow-x-auto bg-white rounded-xl shadow-md">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="px-4 py-2 text-left">ID</th>
-              <th className="px-4 py-2 text-left">Email</th>
-              <th className="px-4 py-2 text-left">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">{user.id}</td>
-                <td className="px-4 py-2">
-                  {editingUserId === user.id ? (
-                    <input
-                      type="email"
-                      value={editEmail}
-                      onChange={(e) => setEditEmail(e.target.value)}
-                      className="px-2 py-1 border rounded-md w-full"
-                    />
-                  ) : (
-                    user.email
-                  )}
-                </td>
-                <td className="px-4 py-2 flex gap-2">
-                  {editingUserId === user.id ? (
-                    <>
-                      <input
-                        type="password"
-                        placeholder="Nueva contraseña"
-                        value={editPassword}
-                        onChange={(e) => setEditPassword(e.target.value)}
-                        className="px-2 py-1 border rounded-md"
-                      />
-                      <button
-                        onClick={handleSaveEdit}
-                        className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="px-3 py-1 bg-yellow-400 text-black rounded-md hover:bg-yellow-500"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={3} className="text-center py-4 text-gray-500">
-                  No hay usuarios
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CreateUserModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onUserCreated={handleUserCreated}
+      />
+
+      <EditUserModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        user={selectedUser}
+        onUserUpdated={handleUserUpdated}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        userName={selectedUser?.email || ""}
+        loading={deleteLoading}
+      />
     </div>
   );
 }
