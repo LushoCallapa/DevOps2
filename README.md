@@ -1,4 +1,4 @@
-# Proyecto - Segundo Parcial - DevOps Backend
+# Proyecto - Tercer Parcial - DevOps Backend
 Integrantes
 Jhonatan Cabezas - 70416
 Luis Callapa - 68881
@@ -71,12 +71,33 @@ docker run -p 5432:5432 myapp-db
 
 ## Funcionalidades
 
-- Registro de usuarios  
-- Login con JWT  
-- CRUD completo de usuarios  
-- Persistencia de datos  
-- Logging de operaciones  
-- Dockerización completa  
-- CI/CD con GitHub Actions  
+### Backend
+- Registro e inicio de sesión con JWT
+- CRUD completo de usuarios
+- API RESTful con Express + TypeScript
+- Persistencia con Prisma ORM
+- Migraciones automáticas de base de datos
+- Logging centralizado con Winston
+- Autenticación md5 optimizada para clientes GUI
+- Scripts de backup y restauración de BD
 
+### Frontend
+- Interfaz moderna con React + Tailwind CSS
+- Sistema de modales reutilizables
+- Gestión de usuarios con formularios interactivos
+- Manejo de sesiones con JWT (localStorage)
+- Botón de logout
+- UX mejorada: backdrop blur y click-outside-to-close
+- Iconos intuitivos para acciones (✏️ editar, 🗑️ eliminar, ➕ crear)
+- Responsive design
+
+### DevOps & Monitoreo
+- Docker Compose con orquestación de servicios
+- Prometheus para recolección de métricas
+- Grafana para visualización de dashboards
+- Loki para logs centralizados
+- Promtail para agregación de logs
+- Node Exporter para métricas del sistema
+- CI/CD con GitHub Actions
+- Despliegue automatizado en EC2
 ---
