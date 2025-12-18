@@ -27,3 +27,5 @@ scrape_configs:
         target_label: 'job'
       - source_labels: ['__meta_docker_container_log_stream']
         target_label: 'stream'
+      - target_label: 'app'
+        replacement: 'myapp'

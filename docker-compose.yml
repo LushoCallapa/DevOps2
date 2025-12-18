@@ -28,6 +28,9 @@ services:
   backend:
     build: ./backend
     container_name: myapp-backend
+    labels:
+      logging: "promtail"
+      service: "backend"
     env_file:
       - .env
     depends_on:
