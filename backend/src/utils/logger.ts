@@ -1,18 +1,21 @@
-import fs from "fs";
-import path from "path";
+import winston from "winston";
+import LokiTransport from "winston-loki";
 
-const LOG_DIR = path.join(__dirname, "../../logs");
+const lokiTransport = new LokiTransport({
+  host: process.env.LOKI_URL || "http://loki:3100",  // URL de Loki desde Docker Compose
+  json: true,
+  labels: { app: "myapp" },
+  interval: 5,  // segundos para enviar lotes
+});
 
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
-}
+export const logger = winston.createLogger({
+  level: "info",
+  transports: [
+    new winston.transports.Console(), // también imprime en consola
+    lokiTransport,
+  ],
+});
 
-export function logEvent(message: string) {
-  const logFile = path.join(LOG_DIR, "backend.log");
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] ${message}\n`;
-
-  fs.appendFile(logFile, logMessage, (err) => {
-    if (err) console.error("Error writing log:", err);
-  });
-}
+export const logEvent = (message: string) => {
+  logger.info(message);
+};
