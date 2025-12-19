@@ -44,6 +44,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
     
     logEvent(`Login exitoso: ${email}`);
+    throw new Error("Login exitoso");
 
     res.json({ token });
   } catch (err: any) {
@@ -56,7 +57,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    users = await prisma.user.findMany({ select: { id: true, email: true } });
+    const users = await prisma.user.findMany({ select: { id: true, email: true } });
     res.json(users);
   } catch (err: any) {
     console.error(err);
