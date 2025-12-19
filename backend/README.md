@@ -1,4 +1,4 @@
-# Proyecto - Segundo Parcial - DevOps Backend
+# Proyecto - Tercer Parcial - DevOps Backend
 
 ### Integrantes
 - Jhonatan Cabezas - 70416
@@ -7,11 +7,20 @@
 - Diego Ledezma - 68779
 - Adrian Sánchez - 69546
 
-Breve repositorio backend con Express + TypeScript y Prisma (Postgres). Provee una API para usuarios (registro/login/gestión básica) usando el modelo `User` definido en `prisma/schema.prisma` (campos: `id`, `email`, `password`, `createdAt`). La conexión a la base de datos se toma desde la variable de entorno `DATABASE_URL`.
+Backend con Express + TypeScript y Prisma (PostgreSQL). Provee una API RESTful para usuarios (registro/login/gestión completa) usando el modelo `User` definido en `prisma/schema.prisma`. La conexión a la base de datos se toma desde la variable de entorno `DATABASE_URL`.
+
+**Mejoras:**
+- Autenticación mejorada con método md5 para mejor compatibilidad
+- Usuario default insertado por migración automática
+- Logging centralizado con Winston
+- Mejor manejo de errores y validaciones
 
 - **Rutas principales:**
-	- `POST /api/users` (registro / creación) — definidas en `src/routes/userRoutes.ts`
-	- Rutas relacionadas con usuarios gestionadas en `src/controllers/userController.ts`
+	- `POST /api/users` (registro/creación) — definidas en `src/routes/userRoutes.ts`
+	- `GET /api/users` (obtener todos los usuarios)
+	- `PUT /api/users/:id` (actualizar usuario)
+	- `DELETE /api/users/:id` (eliminar usuario)
+	- Rutas gestionadas por `src/controllers/userController.ts`
 
 - **Persistencia:**
 	- ORM: `Prisma` con `prisma/schema.prisma`.
@@ -20,8 +29,15 @@ Breve repositorio backend con Express + TypeScript y Prisma (Postgres). Provee u
 	- El cliente Prisma se inicializa en `src/db.ts`.
 
 - **Autenticación y secretos:**
-	- `JWT_SECRET` se espera en el `.env` para firmar tokens (la CI crea este `.env` en EC2).
-	- Token/flujo de autenticación gestionado por el backend (guardar token en frontend con `localStorage` es responsabilidad del cliente).
+	- `JWT_SECRET` se espera en el `.env` para firmar tokens.
+	- Contraseñas hasheadas con bcryptjs
+	- Token/flujo de autenticación gestionado por el backend.
+	- Token almacenado en frontend con `localStorage`.
+
+- **Migraciones:**
+	- Archivo de migración inicial: `prisma/migrations/20251122181517_init/`
+	- Usuario default creado por: `prisma/migrations/20251209_add_default_user/`
+	- Email: `test1@example.com` / Contraseña: `123456`
 
 **Workflow de despliegue**
 - El workflow en `.github/workflows/cicd.yml` se dispara al hacer `push` a `master`.
@@ -35,13 +51,17 @@ Breve repositorio backend con Express + TypeScript y Prisma (Postgres). Provee u
 - **Secrets usados en CI:** `EC2_HOST`, `EC2_USER`, `EC2_KEY`, `ENV_DATABASE_URL`, `ENV_JWT_SECRET`, `ENV_PORT`.
 
 **Backups y logs**
-- Script de backup: `backup_db.sh` — contiene variables usadas para el `pg_dump`:
-	- `DB_NAME="myappdb"`, `DB_USER="adminuser"`, `DB_HOST="172.31.76.165"`, `DB_PORT="5432"`, y usa `PGPASSWORD="SuperPassword123"` en el script para autenticarse (recomendación: mover credenciales a secretos o variables de entorno seguras).
-	- Los backups se guardan en `/home/ubuntu/backend/db_backups` según el script y luego se comprimen; existe `db_backups/restore_backup.sh` para restaurar.
-- Logs: el proyecto escribe logs en la carpeta `logs/` (ej.: `logs/backend.log`). Si ves mensajes como "Environment variable not found: DATABASE_URL", indica que falta la variable en el entorno.
+- **Backup:** Script `backup_db.sh` realiza `pg_dump` de la base de datos:
+	- Credenciales configurables por variables de entorno
+	- Backups comprimidos guardados en `db_backups/`
+	- Script de restauración: `db_backups/restore_backup.sh`
+- **Logs:** Escritura centralizada en `logs/backend.log` usando Winston:
+	- Nivel de logs: info, error, warn
+	- Integración con Loki para visualización en Grafana
+	- Formato: timestamp, nivel, mensaje
 
 ### Aclaración
 El proyecto como tal se ejecuta a traves de ec2s ya configurados en AWS, no es necesario correrlo localmente, y por consecuencia no se necesita la instalación de dependencias ni un .env.
-El link al cual conectarse es: http://44.222.122.48:3000/api/users/
+El link al cual conectarse es: http://18.213.192.54:3000/api/users/ 
 
 

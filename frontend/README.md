@@ -1,4 +1,4 @@
-# Proyecto - Segundo Parcial - DevOps Frontend
+# Proyecto - Tercer Parcial - DevOps Frontend
 
 ### Integrantes
 - Jhonatan Cabezas - 70416 
@@ -7,11 +7,24 @@
 - Diego Ledezma - 68779
 - Adrian Sánchez - 69546
 
-Breve repositorio frontend creado con Vite + React + TypeScript y TailwindCSS. Contiene una página de login y una página de éxito (redirección después de iniciar sesión).
-- **Rutas principales:** `"/"` -> página de Login; `"/success"` -> página de éxito tras login.
-- **Autenticación simple:** el `token` devuelto por el backend se guarda en `localStorage` bajo la clave `token`.
-- **API:** las llamadas HTTP usan `src/api/axiosInstance.ts`. La `baseURL` viene de la variable de entorno `VITE_REACT_APP_API_URL` (por defecto `http://localhost:3000/api`).
-- **Workflows:** hay un workflow de CI en `.github/workflows/cicd.yml`
+Frontend moderno creado con Vite + React 19 + TypeScript y Tailwind CSS. Interfaz intuitiva para gestión de usuarios con autenticación JWT.
+
+**Características principales:**
+- **Rutas:**
+	- `"/"` → Página de Login (autenticación)
+	- `"/success"` → Dashboard de gestión de usuarios (protegido)
+- **Autenticación:** Token JWT guardado en `localStorage` bajo la clave `token`
+- **Componentes modulares:**
+	- `Modal.tsx` → Componente modal reutilizable con backdrop blur
+	- `CreateUserModal.tsx` → Formulario para crear usuarios
+	- `EditUserModal.tsx` → Formulario para editar usuarios
+	- `DeleteConfirmModal.tsx` → Confirmación de eliminación
+- **API:** Llamadas HTTP centralizadas en `src/api/axiosInstance.ts` con `VITE_REACT_APP_API_URL`
+- **UX Mejorada:**
+	- Click-outside-to-close en modales
+	- Botones con iconos (✏️ editar, 🗑️ eliminar, ➕ crear)
+	- Diseño responsivo y gradiente azul
+	- Botón de logout
 
 **Workflow de despliegue (resumen)**
 - El workflow se dispara al hacer `push` a la rama `master`.
@@ -29,4 +42,4 @@ Prerequisitos
 
 ### Aclaración
 El proyecto como tal se ejecuta a traves de ec2s ya configurados en AWS, no es necesario correrlo localmente, y por consecuencia no se necesita la instalación de dependencias ni un .env.
-El link al cual conectarse es: http://3.80.5.56:3001/ 
+El link al cual conectarse es: http://18.213.192.54/ 
