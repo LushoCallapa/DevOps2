@@ -56,7 +56,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const users = await prisma.user.findMany({ select: { id: true, email: true } });
+    users = await prisma.user.findMany({ select: { id: true, email: true } });
     res.json(users);
   } catch (err: any) {
     console.error(err);
